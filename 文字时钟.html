@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>第六期预科班</title>
+  <style>
+    *{margin:0;padding:0;}
+    body{
+      overflow: hidden;
+    }
+    div{
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: auto;
+    }
+
+    #box{
+      overflow: hidden;
+      /* css单位：vw vh：不管浏览器可视区有多宽多高，vw统一把当前可视区划分为100份，vh同理 */
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #box > div {
+      transition: 0.5s;
+    }
+
+    
+    #box > div > div {
+      width: 75px;
+      height: 30px;
+      font-size: 18px;
+      text-align: right;
+      line-height: 30px;
+      text-shadow: 2px 2px 3px rgba(0,0,0, .5);
+    }
+
+    #box .year div {
+      width: 100px;
+      text-align: center;
+      /* border: 1px solid; */
+    }
+
+    #box .now {
+      color: red;
+      text-shadow: 2px 2px 3px rgba(255,0,0, .5);
+    }
+  </style>
+  <script src="https://cdn.bootcdn.net/ajax/libs/moment.js/2.27.0/moment.min.js"></script>
+</head>
+<body>
+  <div id="box">
+    <!-- 下面的是每种类型时间刻度对应的盘 -->
+    <div class="year">
+      <div class='now'>二零二零年</div>
+    </div>
+    <div class="month"></div>
+    <div class="day"></div>
+    <div class="hours"></div>
+    <div class="minutes"></div>
+    <div class="seconds"></div>
+  </div>
+  <script>
+      const box = document.getElementById('box')
+      const divs = [...box.children] // 盘的宽度还没设置
+      const month = divs[1]
+      const day = divs[2]
+      const hours = divs[3]
+      const minutes = divs[4]
+      const seconds = divs[5]
+    
+      // 将数字转为对应的中文   59 =>  五十九  0  零   19  一十九   十九
+      // 20 二十 
+      const toChinese = v => {
+        // 时间转为文字 
+        const chinese = ['零', '一', '二', "三", "四", "五", "六", "七", "八", "九"]
+
+        if (v.length === 1) {
+          // 一位数  直接取值   
+          return chinese[v]
+        } 
+
+        let s1 = v[0]
+        let s2 = v[1]
+
+        return ((s1 == 1 ? "" : chinese[s1]) + "十" + (s2 == 0 ? "" : chinese[s2]))
+      }
+
+      // 用于生成页面的div
+      const getDiv = obj => `<div style='transform: rotate(${ obj.rotate }deg) translateX(${ obj.tranX }px)'>${ obj.text }</div>`
+
+      
+      // 设置所有盘的宽高
+      for (let i = 1; i < divs.length; i++){
+        divs[i].style.width = divs[i].style.height = 150 * i + 100 + "px"
+      }
+
+      let monDiv = ''
+      let dayDiv = ''
+      let houDiv = ''
+      let minDiv = ''
+      let secDiv = ''
+
+      for (let i = 0; i < 60; i++){
+        // 月
+        if (i < 12) {
+          monDiv += getDiv({
+            rotate: 30 * i,
+            tranX: 87,
+            text: toChinese(i + 1 + "") + '月'
+          })
+        }
+        // 日
+        if (i < 31) {
+          dayDiv += getDiv({
+            rotate: 11.6 * i,
+            tranX: 162,
+            text: toChinese(i + 1 + "") + '日'
+          })
+        }
+        // 时
+        if (i < 24) {
+          houDiv += getDiv({
+            rotate: 15 * i,
+            tranX: 237,
+            text: toChinese(i + "") + '点'
+          })
+        }
+
+
+        // 分
+        minDiv += getDiv({
+          rotate: 6 * i,
+          tranX: 312,
+          text: toChinese(i + "") + '分'
+        })
+
+        // 秒
+        secDiv += getDiv({
+          rotate: 6 * i,
+          tranX: 390,
+          text: toChinese(i + "") + '秒'
+        })
+      }
+      
+      month.innerHTML = monDiv
+      day.innerHTML = dayDiv
+      hours.innerHTML = houDiv
+      minutes.innerHTML = minDiv
+      seconds.innerHTML = secDiv
+
+
+      // 之前的时间  ----  新的时间  写工具  
+      // YYYY年  MM月 DD日  HH 小时 mm 分  ss秒  -
+
+      
+      let oldDate = moment("2020-01-01 00:00:00").format('YYYY-M-D-H-m-s').split('-')
+
+      let handler = () => {
+        // 获取一个当前最新的时间
+        let date = moment().format('YYYY-M-D-H-m-s').split('-')
+
+        date.forEach((v, i) => {
+          if (v == oldDate[i]) return
+
+          // 存储旋转角度
+          let base = 0
+          // 存储当前的时间值
+          let number = 0
+
+          // 当有不同盘的时间不一样的时候 就需要旋转当前的盘
+          // ["2020", "7", "20", "22", "0", "54"]
+
+          switch (i) {
+            case 1:
+              // 月盘
+              number = date[i] - 1 
+              base = -30 * number
+              break;
+            
+            case 2:
+              // 日的盘
+              number = date[i] - 1 
+              base = -11.6 * number
+              break;
+            
+            case 3:
+              // 小时的盘
+              number = date[i]
+              base = -15 * number
+              break;  
+            default:
+              // 分秒的旋转角一样 所以一起写
+              base = -6 * date[i]
+              number = date[i]
+              break;
+          }
+
+          if (base == 0) {
+            base = -360
+          }
+
+          divs[i].style.transform = `rotate(${base}deg)`
+          divs[i].number = number
+
+          let child = divs[i].children
+        
+          for (var i = 0; i < child.length; i++) {
+          	child[i].classList.remove('now')
+          }
+
+          child[number].classList.add('now')
+
+        })
+
+        oldDate = date
+      }
+
+      // 给所有的盘绑定事件：监听transition结束的事件
+      divs.forEach((v, i) => {
+        v.addEventListener("transitionend", () => {
+          // console.log(divs[5].number)
+          if (divs[i].number != 0) return
+          // 当0刻度时 删除transition的过渡时间
+            v.style.transitionDuration = "0s"
+            v.style.transform = 'rotate(0deg)'
+
+            setTimeout(() => {
+              v.style.transitionDuration = "0.5s"
+            }, 0)
+        })
+      })
+
+
+      setInterval(handler, 1000)
+
+  </script>
+</body>
+</html>
